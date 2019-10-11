@@ -1,4 +1,4 @@
-# New Relic Kubernetes Logging
+# New Relic OpenShift Logging
 
 Welcome to the New Relic Fluent Bit Output Plugin for Kubernetes! There are only a few quick steps to getting this 
 working in your cluster.

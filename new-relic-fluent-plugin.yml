@@ -45,6 +45,8 @@ spec:
           - /fluent-bit/etc/fluent-bit.conf
           - -e
           - /fluent-bit/bin/out_newrelic.so
+        securityContext:
+          privileged: true
         resources:
           limits:
             cpu: 500m

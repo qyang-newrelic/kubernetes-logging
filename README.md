@@ -8,7 +8,6 @@ working in your cluster.
 ### Applying k8s manifests manually
 
 * Clone this repo
-* For OpenShift, add role: ``
 * Configure the plugin. In `new-relic-fluent-plugin.yml`:
   * Specify your New Relic license key in the value for `LICENSE_KEY`
 * From this directory, run `kubectl apply -f .` on your cluster

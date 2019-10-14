@@ -9,8 +9,6 @@ working in your cluster.
 
 * Clone this repo
 * Deploy the chart using your New Relic license key: `helm install --set licenseKey=(your-license-key) ./helm/newrelic-logging`
-* If you are in the EU, make sure that the license key you are using is an EU key. You will not need to specify the EU 
-  logging endpoint -- it will be inferred from the license key
 * Check the Logging product for your logs
 
 ### Applying k8s manifests manually
@@ -19,9 +17,6 @@ working in your cluster.
 * For OpenShift, add role: `oc adm policy add-scc-to-user privileged system:serviceaccount:default:newrelic-logging`
 * Configure the plugin. In `new-relic-fluent-plugin.yml`:
   * Specify your New Relic license key in the value for `LICENSE_KEY`
-  * If you are in the EU:
-    * Override the `ENDPOINT` environment variable to `https://log-api.eu.newrelic.com/log/v1`
-    * Make sure that the license key you are using is an EU key
 * From this directory, run `kubectl apply -f .` on your cluster
 * Check the Logging product for your logs
 

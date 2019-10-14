@@ -8,11 +8,20 @@ working in your cluster.
 ### Applying k8s manifests manually
 
 * Clone this repo
-* For OpenShift, add role: `oc adm policy add-scc-to-user privileged system:serviceaccount:default:newrelic-logging`
+* For OpenShift, add role: ``
 * Configure the plugin. In `new-relic-fluent-plugin.yml`:
   * Specify your New Relic license key in the value for `LICENSE_KEY`
 * From this directory, run `kubectl apply -f .` on your cluster
 * Check the Logging product for your logs
+
+# Running On OpenShift
+
+This daemonset setting mounts /var/log as service account newrelic-logging so you need to run containers as privileged container. Here is command example:
+
+```
+oc adm policy add-scc-to-user privileged system:serviceaccount:default:newrelic-logging
+oc adm policy add-cluster-role-to-user cluster-reader system:serviceaccount:default:newrelic-logging
+```
 
 ## Configuration notes
 

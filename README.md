@@ -14,7 +14,7 @@ working in your cluster.
 * From this directory, run `kubectl apply -f .` on your cluster
 * Check the Logging product for your logs
 
-# Running On OpenShift
+### Running On OpenShift
 
 This daemonset setting mounts /var/log as service account newrelic-logging so you need to run containers as privileged container. Here is command example:
 

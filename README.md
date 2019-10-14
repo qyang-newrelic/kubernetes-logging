@@ -5,12 +5,6 @@ working in your cluster.
 
 ## Usage
 
-### Deploying as Helm chart (Recommended)
-
-* Clone this repo
-* Deploy the chart using your New Relic license key: `helm install --set licenseKey=(your-license-key) ./helm/newrelic-logging`
-* Check the Logging product for your logs
-
 ### Applying k8s manifests manually
 
 * Clone this repo

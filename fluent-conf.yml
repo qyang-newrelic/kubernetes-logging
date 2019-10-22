@@ -34,13 +34,15 @@ data:
     [FILTER]
        Name    grep
        Match   *
-       Regex  namespace_name default 
+       Regex  namespace_name ${APP_SOURCE} 
 
   filter-metadata.conf: |
     [FILTER]
         Name  modify
         Match *
-        Add  log_source kub01 
+        Add  nrlog_project ${WORKLOAD}/${APP_SOURCE} 
+        Copy host hostname 
+        Copy pod_name nrlog_source 
 
   input-kubernetes.conf: |
     [INPUT]
@@ -48,7 +50,7 @@ data:
         Tag               kube.*
         Path              ${PATH}
         Parser            docker
-        DB                /var/log/flb_kube.db
+        DB                /var/log/flb__default_kube.db
         Mem_Buf_Limit     7MB
         Skip_Long_Lines   On
         Refresh_Interval  5

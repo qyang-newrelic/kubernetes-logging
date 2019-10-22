@@ -24,6 +24,14 @@ spec:
       containers:
       - name: newrelic-logging
         env:
+          - name: WORKLOAD 
+            value : "Test_K8s"
+          - name: APP_SOURCE 
+            value : "default"
+          - name: MY_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
           - name: ENDPOINT
             value : "https://log-api.newrelic.com/log/v1"
           - name: SOURCE
@@ -37,7 +45,7 @@ spec:
           - name: LOG_LEVEL
             value: "info"
           - name: PATH
-            value: "/var/log/containers/*.log"
+            value: "/var/log/containers/*_default_*.log"
         image: newrelic/newrelic-fluentbit-output:1.1.2
         command:
           - /fluent-bit/bin/fluent-bit

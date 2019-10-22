@@ -29,7 +29,7 @@ spec:
           - name: SOURCE
             value: "kubernetes"
           - name: LICENSE_KEY
-            value: <YOUR_LICENSE_KEY>
+            value: "ec9772a11dd7d654d71d35c86f6f168ae99e4e05"
           - name: BUFFER_SIZE
             value: "256000"
           - name: MAX_RECORDS

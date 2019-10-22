@@ -19,8 +19,28 @@ data:
         HTTP_Port     2020
 
     @INCLUDE input-kubernetes.conf
-    @INCLUDE output-newrelic.conf
     @INCLUDE filter-kubernetes.conf
+    @INCLUDE filter-namespace.conf
+    @INCLUDE filter-metadata.conf
+    @INCLUDE output-newrelic.conf
+
+  filter-namespace.conf: |
+    [FILTER]
+       Name         nest
+       Match        *
+       Operation    lift
+       Nested_under kubernetes
+
+    [FILTER]
+       Name    grep
+       Match   *
+       Regex  namespace_name default 
+
+  filter-metadata.conf: |
+    [FILTER]
+        Name  modify
+        Match *
+        Add  log_source kub01 
 
   input-kubernetes.conf: |
     [INPUT]
@@ -31,7 +51,7 @@ data:
         DB                /var/log/flb_kube.db
         Mem_Buf_Limit     7MB
         Skip_Long_Lines   On
-        Refresh_Interval  10
+        Refresh_Interval  5
 
   filter-kubernetes.conf: |
     [FILTER]
@@ -39,6 +59,7 @@ data:
         Match          kube.*
         Kube_URL       https://kubernetes.default.svc.cluster.local:443
         Merge_JSON_Log Off
+
 
   output-newrelic.conf: |
     [OUTPUT]

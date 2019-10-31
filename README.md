@@ -18,8 +18,13 @@ working in your cluster.
 This daemonset setting mounts /var/log as service account newrelic-logging so you need to run containers as privileged container. Here is command example:
 
 ```
+oc create namespace newrelic
+oc apply -f rbac.yaml
 oc adm policy add-scc-to-user privileged system:serviceaccount:default:newrelic-logging
 oc adm policy add-cluster-role-to-user cluster-reader system:serviceaccount:default:newrelic-logging
+oc apply -f fluent-conf.yml
+oc apply -f new-relic-fluent-plugin.yml
+
 ```
 
 ## Configuration notes
@@ -30,36 +35,6 @@ value in `new-relic-fluent-plugin.yml`.
 ## Parsing
 
 We currently support parsing json and docker logs. If you want more parsing, feel free to add more parsers in `fluent-conf.yml`.
-
-Here are some parsers for your parsing pleasure. 
-
-```
-[PARSER]
-    Name   apache
-    Format regex
-    Regex  ^(?<host>[^ ]*) [^ ]* (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^\"]*?)(?: +\S*)?)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")?$
-    Time_Key time
-    Time_Format %d/%b/%Y:%H:%M:%S %z
-
-[PARSER]
-    Name   apache2
-    Format regex
-    Regex  ^(?<host>[^ ]*) [^ ]* (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^ ]*) +\S*)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")?$
-    Time_Key time
-    Time_Format %d/%b/%Y:%H:%M:%S %z
-
-[PARSER]
-    Name   apache_error
-    Format regex
-    Regex  ^\[[^ ]* (?<time>[^\]]*)\] \[(?<level>[^\]]*)\](?: \[pid (?<pid>[^\]]*)\])?( \[client (?<client>[^\]]*)\])? (?<message>.*)$
-
-[PARSER]
-    Name   nginx
-    Format regex
-    Regex ^(?<remote>[^ ]*) (?<host>[^ ]*) (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^\"]*?)(?: +\S*)?)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")?$
-    Time_Key time
-    Time_Format %d/%b/%Y:%H:%M:%S %z
-  ```   
 
 ## Legal
 

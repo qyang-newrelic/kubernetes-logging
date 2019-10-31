@@ -29,7 +29,7 @@ spec:
           - name: NR_CATEGORY 
             value : "OpenShift"
           - name: NR_SOURCE 
-            value : "ram-dev22"
+            value : "app1-dev"
           - name: CUSTOM_NGINX_CONTAINER 
             value : "custom-nginx"
           - name: NR_NAMESPACE

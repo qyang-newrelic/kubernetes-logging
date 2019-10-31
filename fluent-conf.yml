@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: fluent-bit-config
-  namespace: default
+  namespace: newrelic
   labels:
     k8s-app: newrelic-logging
 data:
@@ -20,47 +20,69 @@ data:
 
     @INCLUDE input-kubernetes.conf
     @INCLUDE filter-kubernetes.conf
-    @INCLUDE filter-namespace.conf
+    @INCLUDE filter-nginx-custom.conf
     @INCLUDE filter-metadata.conf
     @INCLUDE output-newrelic.conf
 
-  filter-namespace.conf: |
+  filter-kubernetes.conf: |
     [FILTER]
-       Name         nest
-       Match        *
-       Operation    lift
-       Nested_under kubernetes
+        Name                kubernetes
+        Match               kube.*
+        Kube_URL            https://kubernetes.default.svc.cluster.local:443
+        K8S-Logging.Parser  On
+        K8S-Logging.Exclude Off
+        Labels              On
+        Merge_Log           On
+        Annotations         On
+        Kube_Tag_Prefix     kube.
+        Regex_Parser        k8s-custom-tag
+
+
+  filter-nginx-custom.conf: |
+    [FILTER]
+        Name                parser
+        Match               kube.${CUSTOM_NGINX_CONTAINER}.*
+        Key_Name            log
+        Parser              nginx-custom
+        Reserve_Data        On 
+        Preserve_Key        On
 
     [FILTER]
+        Name                parser
+        Match               kube.${CUSTOM_NGINX_CONTAINER}.*
+        Key_Name            ng_log
+        Parser              json-notime
+        Reserve_Data        On 
+
+
+  filter-namespace.conf: |
+    [FILTER]
        Name    grep
-       Match   *
+       Match   kube.{APP_SOURCE}.* 
        Regex  namespace_name ${APP_SOURCE} 
+
 
   filter-metadata.conf: |
     [FILTER]
-        Name  modify
-        Match *
-        Add  nrlog_project ${WORKLOAD}/${APP_SOURCE} 
-        Copy host hostname 
-        Copy pod_name nrlog_source 
+        Name   modify
+        Match  kube.*
+        Add    NR_CATEGORY  ${NR_CATEGORY}
+        Add    NR_SOURCE   ${NR_SOURCE} 
+        Copy   HOST       HOSTNAME
+
 
   input-kubernetes.conf: |
     [INPUT]
         Name              tail
-        Tag               kube.*
         Path              ${PATH}
         Parser            docker
-        DB                /var/log/flb__default_kube.db
-        Mem_Buf_Limit     7MB
+        DB                /var/log/flb_${NR_NAMESPACE}_kube.db
+        Mem_Buf_Limit     70MB
         Skip_Long_Lines   On
+        #Path_key          filename
         Refresh_Interval  5
-
-  filter-kubernetes.conf: |
-    [FILTER]
-        Name           kubernetes
-        Match          kube.*
-        Kube_URL       https://kubernetes.default.svc.cluster.local:443
-        Merge_JSON_Log Off
+        Tag_Regex         (?<pod_name>[a-z0-9](?:[-a-z0-9]*[a-z0-9])?(?:\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*)_(?<namespace_name>[^_]+)_(?<container_name>.+)-(?<docker_id>[a-z0-9]{64})\.log$
+        Tag               kube.<container_name>.<namespace_name>.<pod_name>.<docker_id>
 
 
   output-newrelic.conf: |
@@ -74,6 +96,10 @@ data:
 
   parsers.conf: |
     [PARSER]
+        Name   json-notime
+        Format json
+
+    [PARSER]
         Name   json
         Format json
         Time_Key time
@@ -85,6 +111,111 @@ data:
         Time_Key    time
         Time_Format %Y-%m-%dT%H:%M:%S.%L
         Time_Keep   On
-        # Command      |  Decoder | Field | Optional Action
-        # =============|==================|=================
         Decode_Field_As   escaped    log
+
+    [PARSER]
+        Name    k8s-custom-tag
+        Format  regex
+        Regex   (?<tag>[^.]+)?\.(?<container_name>.+)\.(?<namespace_name>[^_]+)\.(?<pod_name>[a-z0-9](?:[-a-z0-9]*[a-z0-9])?(?:\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*)\.(?<docker_id>[a-z0-9]{64})$
+
+    [PARSER]
+        Name   nginx
+        Format regex
+        Regex ^(?<remote>[^ ]*) (?<host>[^ ]*) (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^\"]*?)(?: +\S*)?)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)" "(?<gzip>[^ ]*)")
+
+    [PARSER]
+        Name    kube-custom
+        Format  regex
+        Regex   (?<tag>[^.]+)?\.?(?<pod_name>[a-z0-9](?:[-a-z0-9]*[a-z0-9])?(?:\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*)_(?<namespace_name>[^_]+)_(?<container_name>.+)-(?<docker_id>[a-z0-9]{64})\.log$
+
+    [PARSER]
+        Name      nginx-custom
+        Format    regex
+        Regex     ^([^\]]*) \[(?<ng_meta_data>[^\]]*)] (?<ng_log>.*)$
+        #Regex     (?<ng_header>|LOG_LINE|) (?<ng_time>[^\]]*) \[(?<ng_meta_data>[^\]]*)] (?<ng_log>.*)$
+
+
+    [PARSER]
+        Name   apache
+        Format regex
+        Regex  ^(?<host>[^ ]*) [^ ]* (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^\"]*?)(?: +\S*)?)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")?$
+        Time_Key time
+        Time_Format %d/%b/%Y:%H:%M:%S %z
+
+    [PARSER]
+        Name   apache2
+        Format regex
+        Regex  ^(?<host>[^ ]*) [^ ]* (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^ ]*) +\S*)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>.*)")?$
+        Time_Key time
+        Time_Format %d/%b/%Y:%H:%M:%S %z
+
+    [PARSER]
+        Name   apache_error
+        Format regex
+        Regex  ^\[[^ ]* (?<time>[^\]]*)\] \[(?<level>[^\]]*)\](?: \[pid (?<pid>[^\]]*)\])?( \[client (?<client>[^\]]*)\])? (?<message>.*)$
+
+    [PARSER]
+        Name        k8s-nginx-ingress
+        Format      regex
+        Regex       ^(?<host>[^ ]*) - \[(?<real_ip>[^ ]*)\] - (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^\"]*?)(?: +\S*)?)?" (?<code>[^ ]*) (?<size>[^ ]*) "(?<referer>[^\"]*)" "(?<agent>[^\"]*)" (?<request_length>[^ ]*) (?<request_time>[^ ]*) \[(?<proxy_upstream_name>[^ ]*)\] (?<upstream_addr>[^ ]*) (?<upstream_response_length>[^ ]*) (?<upstream_response_time>[^ ]*) (?<upstream_status>[^ ]*) (?<last>[^$]*)
+        Time_Key    time
+        Time_Format %d/%b/%Y:%H:%M:%S %z
+
+    [PARSER]
+        Name        docker-daemon
+        Format      regex
+        Regex       time="(?<time>[^ ]*)" level=(?<level>[^ ]*) msg="(?<msg>[^ ].*)"
+        Time_Key    time
+        Time_Format %Y-%m-%dT%H:%M:%S.%L
+        Time_Keep   On
+
+    [PARSER]
+        Name        syslog-rfc5424
+        Format      regex
+        Regex       ^\<(?<pri>[0-9]{1,5})\>1 (?<time>[^ ]+) (?<host>[^ ]+) (?<ident>[^ ]+) (?<pid>[-0-9]+) (?<msgid>[^ ]+) (?<extradata>(\[(.*)\]|-)) (?<message>.+)$
+        Time_Key    time
+        Time_Format %Y-%m-%dT%H:%M:%S.%L
+        Time_Keep   On
+
+    [PARSER]
+        Name        syslog-rfc3164-local
+        Format      regex
+        Regex       ^\<(?<pri>[0-9]+)\>(?<time>[^ ]* {1,2}[^ ]* [^ ]*) (?<ident>[a-zA-Z0-9_\/\.\-]*)(?:\[(?<pid>[0-9]+)\])?(?:[^\:]*\:)? *(?<message>.*)$
+        Time_Key    time
+        Time_Format %b %d %H:%M:%S
+        Time_Keep   On
+
+    [PARSER]
+        Name        syslog-rfc3164
+        Format      regex
+        Regex       /^\<(?<pri>[0-9]+)\>(?<time>[^ ]* {1,2}[^ ]* [^ ]*) (?<host>[^ ]*) (?<ident>[a-zA-Z0-9_\/\.\-]*)(?:\[(?<pid>[0-9]+)\])?(?:[^\:]*\:)? *(?<message>.*)$/
+        Time_Key    time
+        Time_Format %b %d %H:%M:%S
+        Time_Format %Y-%m-%dT%H:%M:%S.%L
+        Time_Keep   On
+
+    [PARSER]
+        Name    mongodb
+        Format  regex
+        Regex   ^(?<time>[^ ]*)\s+(?<severity>\w)\s+(?<component>[^ ]+)\s+\[(?<context>[^\]]+)]\s+(?<message>.*?) *(?<ms>(\d+))?(:?ms)?$
+        Time_Format %Y-%m-%dT%H:%M:%S.%L
+        Time_Keep   On
+        Time_Key time
+
+    [PARSER]
+        # http://rubular.com/r/tjUt3Awgg4
+        Name cri
+        Format regex
+        Regex ^(?<time>[^ ]+) (?<stream>stdout|stderr) (?<logtag>[^ ]*) (?<message>.*)$
+        Time_Key    time
+        Time_Format %Y-%m-%dT%H:%M:%S.%L%z
+
+    [PARSER] 
+        Name tomcat-access
+        Format regex
+        Regex ^(?<host>[^ ]*) [^ ]* (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^\"]*?)(?: +\S*)?)?" (?<code>\d*) (?<time_taken>\d*) (?<bytes_sent>\d+)$
+        Time_Key   time
+        Time_Format %d/%b/%Y:%H:%M:%S %z
+
+        
+

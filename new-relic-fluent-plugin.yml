@@ -25,7 +25,7 @@ spec:
       - name: newrelic-logging
         env:
           - name: clusterName
-            value: "cs3_k8s"
+            value: "clustername"
           - name: PATH
             value: "/var/log/containers/*_default_*.log"
           - name: nr_category

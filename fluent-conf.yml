@@ -132,7 +132,7 @@ data:
         Name      nginx-custom
         Format    regex
         Regex     ^([^\]]*) \[(?<ng_meta_data>[^\]]*)] (?<ng_log>.*)$
-        #Regex     (?<ng_header>|LOG_LINE|) (?<ng_time>[^\]]*) \[(?<ng_meta_data>[^\]]*)] (?<ng_log>.*)$
+        #Regex     (?<ng_header>|LOG_LINE|) (?<nginx_time>[^\]]*) \[(?<nginx_meta>[^\]]*)] (?<ng_log>.*)$
 
 
     [PARSER]

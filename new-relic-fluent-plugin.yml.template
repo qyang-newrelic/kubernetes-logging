@@ -25,17 +25,17 @@ spec:
       - name: newrelic-logging
         env:
           - name: clusterName
-            value: "cs3_k8s"
+            value: "{{cluster_name}}"
           - name: PATH
-            value: "/var/log/containers/*_default_*.log"
+            value: "{{PATH}}"
           - name: nr_category
             value : "OpenShift"
           - name: nr_source 
-            value : "default"
+            value : "{{nr_source}}"
           - name: custom_nginx_container 
-            value : "custom-nginx"
+            value : "{{custom_nginx_container}}"
           - name: LICENSE_KEY
-            value: "xxx"
+            value: "{{LICENSE_KEY}}"
           - name: nr_namespace
             valueFrom:
               fieldRef:

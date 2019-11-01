@@ -41,7 +41,7 @@ data:
   filter-nginx-custom.conf: |
     [FILTER]
         Name                parser
-        Match               kube.${CUSTOM_NGINX_CONTAINER}.*
+        Match               kube.${custom_nginx_container}.*
         Key_Name            log
         Parser              nginx-custom
         Reserve_Data        On 
@@ -49,7 +49,7 @@ data:
 
     [FILTER]
         Name                parser
-        Match               kube.${CUSTOM_NGINX_CONTAINER}.*
+        Match               kube.${custom_nginx_container}.*
         Key_Name            ng_log
         Parser              json-notime
         Reserve_Data        On 
@@ -66,8 +66,9 @@ data:
     [FILTER]
         Name   modify
         Match  kube.*
-        Add    NR_CATEGORY  ${NR_CATEGORY}
-        Add    NR_SOURCE   ${NR_SOURCE} 
+        Add    NR_CATEGORY  ${nr_category}
+        Add    NR_SOURCE   ${nr_source} 
+        Add    CLUSTER_NAME  ${clusterName}
         Copy   HOST       HOSTNAME
 
 

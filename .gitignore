@@ -1,2 +1,4 @@
 .idea
-
+.sh
+node_module
+new-relic-fluent-plugin.yml

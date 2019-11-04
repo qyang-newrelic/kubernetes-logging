@@ -142,7 +142,8 @@ data:
         Format    regex
         #Regex     ^([^\]]*) \[(?<nginx_meta>[^\]]*)] (?<nginx_log>.*)$
         #Regex     (|LOG_LINE|) (?<nginx_time>[^\]]*) \[(?<nginx_meta>[^\]]*)] (?<nginx_log>.*)$
-        Regex      (|LOG_LINE|) (?<nginx_time>[^\]]*) \[(?<nginx_meta_origin>[^:]*):(?<nginx_meta_session_cookie_id>[^:]*):REQUEST ID=(?<nginx_meta_request_id>[^\]]*)\] (?<nginx_log>.*)$
+        #Regex      (|LOG_LINE|) (?<nginx_time>[^\]]*) \[(?<nginx_meta_origin>[^:]*):(?<nginx_meta_session_cookie_id>[^:]*):REQUEST ID=(?<nginx_meta_request_id>[^\]]*)\](?<nginx_log>.*)$
+        Regex      (|LOG_LINE|) (?<nginx_time>[^\]]*) \[(?<nginx_meta>[^\]]*)\](?<nginx_log>.*)$
         #Regex      (?<ng_header>|LOG_LINE|) (?<ng_time>[^\]]*) \[(?<nginx_origin>[^:]*):(?<session_cookie_id>[^:]*):REQUEST ID=(?<nginx_request_id>[^\]]*)\] { host: \"(?<ng_host>[^\"]*)\", remote_addr: \"(?<remote_addr>[^\"]*)\", request: \"(?<request_method>\w*) (?<request_url>\S*) (?<request_proto>\S*)\", status: (?<status>[^,]*), referer: \"(?<referer>[^\"]*)\", request_time: (?<request_time>[^\,]*), connection: \"(?<connection>[^\"]*)\", connection_requests: \"(?<connection_request>[^\"]*)\", location: \"(?<location>[^\"]*)\", upstream_location_response: \"(?<upstream_location_response>[^\"]*)\", bytes_sent: \"(?<bytes_sent>[^\"]*)\", client_ip: \"(?<client_ip>[^\"]*)\", x_dynaTrace: \"(?<x_dynaTrace>[^\"]*)\" }$
         #Decode_Field_As   json    ng_log
 
@@ -253,15 +254,19 @@ data:
         function cb_nginx(tag, timestamp, record)
            new_record = record
            new_record["nr_tag"] = tag
-           log_line = record["nginx_log"]
-           if log_line then 
-              log_line = log_line:match("{([^}]*)}")
+           log_source = record["stream"] 
+           -- if log_source then print("stream ->" .. log_source) end
+           if log_source and log_source:find("stdout") then 
+            log_line = record["nginx_log"]
+            if log_line then log_line = log_line:gsub("^[%s{]*(.-)[}%s]*$","%1") end
+
+            if log_line then
                -- print (log_line)
                ram = {}
                local pattern = string.format("([^%s]+)", ",")
                local pattern_b =  "([^:]+):(.*)"
                log_line:gsub(pattern, function(c)
-                   print("c:" .. c)
+                   --print("c:" .. c)
                    local key,value = c:match(pattern_b)
                    if key then
                      key = key:match("^%s*(.-)%s*$")
@@ -274,6 +279,7 @@ data:
                -- remove the old value
                new_record["nginx_log"] = nil
                new_record["nginx"] = ram
+            end
            end
            return 1, timestamp, new_record
         end

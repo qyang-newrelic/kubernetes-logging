@@ -29,7 +29,7 @@ spec:
           - name: PATH
             value: "{{PATH}}"
           - name: nr_category
-            value : "OpenShift"
+            value : "{{nr_category}}"
           - name: nr_source 
             value : "{{nr_source}}"
           - name: custom_nginx_container 

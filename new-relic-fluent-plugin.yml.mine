@@ -2,7 +2,7 @@ apiVersion: extensions/v1beta1
 kind: DaemonSet
 metadata:
   name: newrelic-logging
-  namespace: newrelic
+  namespace: default
   labels:
     k8s-app: newrelic-logging
     version: v1
@@ -24,19 +24,11 @@ spec:
       containers:
       - name: newrelic-logging
         env:
-          - name: clusterName
-            value: "clustername"
-          - name: PATH
-            value: "/var/log/containers/*_default_*.log"
-          - name: nr_category
-            value : "OpenShift"
-          - name: nr_source 
+          - name: WORKLOAD 
+            value : "Test_K8s"
+          - name: APP_SOURCE 
             value : "default"
-          - name: custom_nginx_container 
-            value : "custom-nginx"
-          - name: LICENSE_KEY
-            value: "ec9772a11dd7d654d71d35c86f6f168ae99e4e05"
-          - name: nr_namespace
+          - name: MY_NAMESPACE
             valueFrom:
               fieldRef:
                 fieldPath: metadata.namespace
@@ -44,12 +36,16 @@ spec:
             value : "https://log-api.newrelic.com/log/v1"
           - name: SOURCE
             value: "kubernetes"
+          - name: LICENSE_KEY
+            value: "ec9772a11dd7d654d71d35c86f6f168ae99e4e05"
           - name: BUFFER_SIZE
-            value: "2560000"
+            value: "256000"
           - name: MAX_RECORDS
-            value: "50000"
+            value: "5000"
           - name: LOG_LEVEL
             value: "info"
+          - name: PATH
+            value: "/var/log/containers/*_default_*.log"
         image: newrelic/newrelic-fluentbit-output:1.1.2
         command:
           - /fluent-bit/bin/fluent-bit
@@ -61,10 +57,10 @@ spec:
           privileged: true
         resources:
           limits:
-            cpu: 800m
-            memory: 256Mi
+            cpu: 500m
+            memory: 128Mi
           requests:
-            cpu: 50m
+            cpu: 250m
             memory: 64Mi
         volumeMounts:
         - name: config

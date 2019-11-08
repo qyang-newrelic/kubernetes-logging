@@ -1,4 +1,4 @@
-# NR Parser 2019.11.08 1535
+# NR Parser 2019.11.08 1735
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -64,12 +64,6 @@ data:
         Reserve_Data        On 
 
 
-  filter-namespace.conf: |
-    [FILTER]
-       Name    grep
-       Match   kube.{APP_SOURCE}.* 
-       Regex  namespace_name ${APP_SOURCE} 
-
 
   filter-metadata.conf: |
     [FILTER]
@@ -86,7 +80,7 @@ data:
         Name              tail
         Path              ${PATH}
         Parser            docker
-        DB                /var/log/flb_${NR_NAMESPACE}_kube.db
+        DB                /var/log/flb_${nr_namespace}_kube.db
         Mem_Buf_Limit     70MB
         Skip_Long_Lines   On
         #Path_key          filename

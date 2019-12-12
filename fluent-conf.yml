@@ -79,7 +79,7 @@ data:
     [INPUT]
         Name              tail
         Path              ${PATH}
-        Parser            docker
+        Parser            docker-new
         DB                /var/log/flb_${nr_namespace}_kube.db
         Mem_Buf_Limit     70MB
         Skip_Long_Lines   On
@@ -108,6 +108,15 @@ data:
         Format json
         Time_Key time
         Time_Format %d/%b/%Y:%H:%M:%S %z
+
+    [PARSER]
+        Name        docker-new
+        Format      json
+        Time_Key    time
+        Time_Format %Y-%m-%dT%H:%M:%S.%L
+        Time_Keep   On
+        Decode_Field_As   escaped_utf8 log 
+        #Decode_Field_As      json log
 
     [PARSER]
         Name        docker
